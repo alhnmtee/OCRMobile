@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "410816874838",
+    "project_id": "ocrmobile-b39a8",
+    "storage_bucket": "ocrmobile-b39a8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:410816874838:android:faaa1be6a0d1c8f32b6ef7",
+        "android_client_info": {
+          "package_name": "com.ocrmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDV5teByYmdHtTRL-bNCSQgZ39Z9cnsVbk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
