@@ -86,6 +86,13 @@ android {
         versionCode 1
         versionName "1.0"
     }
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.core:core:1.9.0'
+            force 'androidx.core:core-ktx:1.9.0'
+            exclude group: 'com.android.support'
+        }
+    }
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
