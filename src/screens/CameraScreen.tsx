@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
 import { Camera, useCameraDevices } from 'react-native-vision-camera';
 import { useDocuments } from '../contexts/DocumentContext';
+import OCRService from '../services/OCRService';
+import NotificationService from '../services/NotificationService';
 
 type CameraScreenProps = {
   navigation: any;
@@ -10,10 +12,13 @@ type CameraScreenProps = {
 const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
   const [hasPermission, setHasPermission] = useState(false);
   const [isCameraReady, setCameraReady] = useState(false);
+  const [ocrDuration, setOcrDuration] = useState<string>(''); 
+  const [ocrStartTime, setOcrStartTime] = useState<number | null>(null); 
+  const [ocrEndTime, setOcrEndTime] = useState<number | null>(null); 
   const devices = useCameraDevices();
   const device = devices.filter(device => device.position === 'back')[0];
   const camera = useRef<Camera>(null);
-  const { saveDocument } = useDocuments();
+  const { saveDocument, saveOCRResult } = useDocuments();
 
   useEffect(() => {
     const requestPermissions = async () => {
@@ -31,6 +36,19 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
     requestPermissions();
   }, [navigation]);
 
+  useEffect(() => {
+    if (ocrStartTime) {
+      const endTime = Date.now();
+      const durationInMs = endTime - ocrStartTime;
+      setOcrDuration(durationInMs.toString());
+
+      NotificationService.createLocalNotification(
+        'OCR Süresi',
+        `OCR işlem süresi: ${durationInMs} ms`
+      );
+    }
+  }, [ocrStartTime, navigation]);
+
   const takePicture = async () => {
     try {
       if (camera.current) {
@@ -39,11 +57,19 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
         });
 
         const fileName = `scan_${Date.now()}.jpg`;
-        await saveDocument(
-          `file://${photo.path}`,
+        const filePath = `file://${photo.path}`;
+        const metadata = await saveDocument(
+          filePath,
           fileName,
           'image/jpeg'
         );
+
+        setOcrStartTime(Date.now());
+        const ocrText = await OCRService.performOCR(filePath);
+        
+        setOcrEndTime(Date.now());
+
+        await saveOCRResult(metadata.id, ocrText);
 
         Alert.alert(
           'Başarılı',
@@ -85,6 +111,8 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       )}
+
+      
     </View>
   );
 };
@@ -122,6 +150,18 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: '#FF3B30',
+  },
+  durationContainer: {
+    position: 'absolute',
+    bottom: 120,
+    left: 0,
+    right: 0,
+    padding: 20,
+    alignItems: 'center',
+  },
+  durationText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
 
