@@ -4,6 +4,8 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
+import CameraScreen from './src/screens/CameraScreen'; 
+
 import {ActivityIndicator, View} from 'react-native';
 
 const Stack = createNativeStackNavigator();
@@ -28,11 +30,21 @@ function Navigation() {
           options={{headerShown: false}}
         />
       ) : (
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{headerShown: true}}
+        <>
+          <Stack.Screen
+            name="Home"
+            component={HomeScreen}
+            options={{ headerShown: true }}
+          />
+          <Stack.Screen
+          name="Camera"
+          component={CameraScreen}
+          options={{
+            headerShown: true,
+            title: 'Camera',
+          }}
         />
+        </>
       )}
     </Stack.Navigator>
   );

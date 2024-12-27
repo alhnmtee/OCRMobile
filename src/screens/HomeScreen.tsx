@@ -81,7 +81,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({navigation}) => {
       
       <TouchableOpacity 
         style={styles.button}
-        onPress={simulateOCRProcess}>
+        onPress={() => navigation.navigate('Camera')}>
         <Text style={styles.buttonText}>OCR İşlemi Başlat</Text>
       </TouchableOpacity>
 
