@@ -1,95 +1,65 @@
 // App.tsx
+
 import React from 'react';
-import {NavigationContainer} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {AuthProvider, useAuth} from './src/contexts/AuthContext';
-import {DocumentProvider} from './src/contexts/DocumentContext';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { RootStackParamList } from './src/navigation/types';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import CameraScreen from './src/screens/CameraScreen';
 import DocumentsScreen from './src/screens/DocumentsScreen';
 import DocumentTagsScreen from './src/screens/DocumentTagsScreen';
-import {useInitDatabase} from './src/database/initDatabase';
-
-import {ActivityIndicator, View} from 'react-native';
-
-export type RootStackParamList = {
-  Login: undefined;
-  Home: undefined;
-  Camera: undefined;
-  Documents: undefined;
-  DocumentTags: { documentId: string; documentName: string };
-};
+import BluetoothShareScreen from './src/screens/BluetoothShareScreen';
+import { AuthProvider } from './src/contexts/AuthContext';
+import { DocumentProvider } from './src/contexts/DocumentContext';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-function Navigation() {
-  const {signedIn, loading} = useAuth();
-  useInitDatabase();
-
-  if (loading) {
-    return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
+const App = () => {
   return (
-    <Stack.Navigator>
-      {!signedIn ? (
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{headerShown: false}}
-        />
-      ) : (
-        <>
-          <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{headerShown: true}}
-          />
-          <Stack.Screen
-            name="Camera"
-            component={CameraScreen}
-            options={{
+    <NavigationContainer>
+      <AuthProvider>
+        <DocumentProvider>
+          <Stack.Navigator 
+            initialRouteName="Login"
+            screenOptions={{
               headerShown: true,
-              title: 'Belge Tara',
-            }}
-          />
-          <Stack.Screen
-            name="Documents"
-            component={DocumentsScreen}
-            options={{
-              headerShown: true,
-              title: 'Belgelerim',
-            }}
-          />
-          <Stack.Screen
-            name="DocumentTags"
-            component={DocumentTagsScreen}
-            options={{
-              headerShown: true,
-              title: 'Etiketler',
-            }}
-          />
-        </>
-      )}
-    </Stack.Navigator>
+            }}>
+            <Stack.Screen 
+              name="Login" 
+              component={LoginScreen}
+              options={{ headerShown: false }} 
+            />
+            <Stack.Screen 
+              name="Home" 
+              component={HomeScreen}
+              options={{ title: 'Ana Sayfa' }} 
+            />
+            <Stack.Screen 
+              name="Camera" 
+              component={CameraScreen}
+              options={{ title: 'Belge Tara' }} 
+            />
+            <Stack.Screen 
+              name="Documents" 
+              component={DocumentsScreen}
+              options={{ title: 'Belgelerim' }} 
+            />
+            <Stack.Screen 
+              name="DocumentTags" 
+              component={DocumentTagsScreen}
+              options={{ title: 'Etiketler' }} 
+            />
+            <Stack.Screen 
+              name="BluetoothShare" 
+              component={BluetoothShareScreen}
+              options={{ title: 'Bluetooth ile Paylaş' }} 
+            />
+          </Stack.Navigator>
+        </DocumentProvider>
+      </AuthProvider>
+    </NavigationContainer>
   );
-}
-
-function App(): React.JSX.Element {
-  return (
-    <AuthProvider>
-      <DocumentProvider>
-        <NavigationContainer>
-          <Navigation />
-        </NavigationContainer>
-      </DocumentProvider>
-    </AuthProvider>
-  );
-}
+};
 
 export default App;

@@ -1,6 +1,6 @@
-// src/screens/DocumentScreen.tsx
+// src/screens/DocumentsScreen.tsx
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useDocuments } from '../contexts/DocumentContext';
 import { formatBytes, formatDate } from '../utils/formatters';
-import { Document } from '../database/models/Document';
+import { Document } from '../models/Document';
 
 const DocumentsScreen = ({ navigation }: any) => {
   const {
@@ -23,15 +23,34 @@ const DocumentsScreen = ({ navigation }: any) => {
     shareDocument,
   } = useDocuments();
 
-  const handleShare = async (documentId: string) => {
-    try {
-      // Normalde buraya bir kullanıcı seçme ekranı eklenebilir
-      const targetUserId = 'example_user_id'; 
-      await shareDocument(documentId, targetUserId);
-      Alert.alert('Başarılı', 'Belge paylaşıldı');
-    } catch (error) {
-      Alert.alert('Hata', 'Belge paylaşılırken bir hata oluştu');
-    }
+  const handleShare = async (document: Document) => {
+    Alert.alert(
+      'Paylaş',
+      'Paylaşım yöntemini seçin',
+      [
+        {
+          text: 'Bluetooth ile Paylaş',
+          onPress: () => navigation.navigate('BluetoothShare', { document })
+        },
+        {
+          text: 'Kullanıcı ile Paylaş',
+          onPress: async () => {
+            try {
+              // Normalde buraya bir kullanıcı seçme ekranı eklenebilir
+              const targetUserId = 'example_user_id';
+              await shareDocument(document.id, targetUserId);
+              Alert.alert('Başarılı', 'Belge paylaşıldı');
+            } catch (error) {
+              Alert.alert('Hata', 'Belge paylaşılırken bir hata oluştu');
+            }
+          }
+        },
+        {
+          text: 'İptal',
+          style: 'cancel'
+        }
+      ]
+    );
   };
 
   const handleAddTags = (document: Document) => {
@@ -63,7 +82,7 @@ const DocumentsScreen = ({ navigation }: any) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.shareButton]}
-          onPress={() => handleShare(item.id)}>
+          onPress={() => handleShare(item)}>
           <Text style={styles.buttonText}>Paylaş</Text>
         </TouchableOpacity>
         <TouchableOpacity

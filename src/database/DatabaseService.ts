@@ -1,15 +1,16 @@
-// src/database/DatabaseService.ts
+// src/services/DatabaseService.ts
 
-import SQLite from 'react-native-sqlite-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Document } from './models/Document';
 import { Share } from './models/share';
 import { Tag } from './models/tag';
 
-SQLite.enablePromise(true);
-
 class DatabaseService {
-    private database: SQLite.SQLiteDatabase | null = null;
     private static instance: DatabaseService;
+    private readonly DOCUMENTS_KEY = '@documents';
+    private readonly SHARES_KEY = '@shares';
+    private readonly TAGS_KEY = '@tags';
+    private readonly DOC_TAGS_KEY = '@doc_tags';
 
     private constructor() { }
 
@@ -22,97 +23,29 @@ class DatabaseService {
 
     public async initDatabase(): Promise<void> {
         try {
-            const db = await SQLite.openDatabase({
-                name: 'OCRMobileDB.db',
-                location: 'default'
-            });
-            this.database = db;
-            await this.createTables();
+            // İlk çalıştırmada boş array'leri oluştur
+            const docs = await AsyncStorage.getItem(this.DOCUMENTS_KEY);
+            if (!docs) await AsyncStorage.setItem(this.DOCUMENTS_KEY, JSON.stringify([]));
+
+            const shares = await AsyncStorage.getItem(this.SHARES_KEY);
+            if (!shares) await AsyncStorage.setItem(this.SHARES_KEY, JSON.stringify([]));
+
+            const tags = await AsyncStorage.getItem(this.TAGS_KEY);
+            if (!tags) await AsyncStorage.setItem(this.TAGS_KEY, JSON.stringify([]));
+
+            const docTags = await AsyncStorage.getItem(this.DOC_TAGS_KEY);
+            if (!docTags) await AsyncStorage.setItem(this.DOC_TAGS_KEY, JSON.stringify([]));
         } catch (error) {
             console.error('Database initialization error:', error);
             throw error;
         }
     }
 
-    private async createTables(): Promise<void> {
-        const createTableQueries = [
-            `CREATE TABLE IF NOT EXISTS documents (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                path TEXT NOT NULL,
-                createdAt INTEGER NOT NULL,
-                size INTEGER NOT NULL,
-                mimeType TEXT NOT NULL,
-                ocrText TEXT,
-                ocrCompleted INTEGER DEFAULT 0,
-                userId TEXT NOT NULL,
-                shareCount INTEGER DEFAULT 0,
-                lastModified INTEGER NOT NULL
-            )`,
-            `CREATE TABLE IF NOT EXISTS shares (
-                id TEXT PRIMARY KEY,
-                documentId TEXT NOT NULL,
-                sharedByUserId TEXT NOT NULL,
-                sharedWithUserId TEXT NOT NULL,
-                sharedAt INTEGER NOT NULL,
-                accessType TEXT NOT NULL,
-                status TEXT NOT NULL,
-                FOREIGN KEY (documentId) REFERENCES documents (id) ON DELETE CASCADE
-            )`,
-            `CREATE TABLE IF NOT EXISTS tags (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                createdAt INTEGER NOT NULL,
-                userId TEXT NOT NULL
-            )`,
-            `CREATE TABLE IF NOT EXISTS document_tags (
-                documentId TEXT NOT NULL,
-                tagId TEXT NOT NULL,
-                PRIMARY KEY (documentId, tagId),
-                FOREIGN KEY (documentId) REFERENCES documents (id) ON DELETE CASCADE,
-                FOREIGN KEY (tagId) REFERENCES tags (id) ON DELETE CASCADE
-            )`
-        ];
-
-        if (!this.database) {
-            throw new Error('Database not initialized');
-        }
-
-        try {
-            await this.database.transaction(tx => {
-                createTableQueries.forEach(query => {
-                    tx.executeSql(query);
-                });
-            });
-        } catch (error) {
-            console.error('Error creating tables:', error);
-            throw error;
-        }
-    }
-
     public async insertDocument(document: Document): Promise<void> {
-        if (!this.database) {
-            throw new Error('Database not initialized');
-        }
-
-        const query = `INSERT INTO documents 
-            (id, name, path, createdAt, size, mimeType, ocrText, ocrCompleted, userId, shareCount, lastModified)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
         try {
-            await this.database.executeSql(query, [
-                document.id,
-                document.name,
-                document.path,
-                document.createdAt,
-                document.size,
-                document.mimeType,
-                document.ocrText,
-                document.ocrCompleted ? 1 : 0,
-                document.userId,
-                document.shareCount,
-                document.lastModified
-            ]);
+            const docs = await this.getDocuments(document.userId);
+            docs.push(document);
+            await AsyncStorage.setItem(this.DOCUMENTS_KEY, JSON.stringify(docs));
         } catch (error) {
             console.error('Error inserting document:', error);
             throw error;
@@ -120,25 +53,10 @@ class DatabaseService {
     }
 
     public async getDocuments(userId: string): Promise<Document[]> {
-        if (!this.database) {
-            throw new Error('Database not initialized');
-        }
-
-        const query = 'SELECT * FROM documents WHERE userId = ? ORDER BY createdAt DESC';
-
         try {
-            const [results] = await this.database.executeSql(query, [userId]);
-            const documents: Document[] = [];
-
-            for (let i = 0; i < results.rows.length; i++) {
-                const row = results.rows.item(i);
-                documents.push({
-                    ...row,
-                    ocrCompleted: row.ocrCompleted === 1
-                });
-            }
-
-            return documents;
+            const docs = await AsyncStorage.getItem(this.DOCUMENTS_KEY);
+            const allDocs: Document[] = docs ? JSON.parse(docs) : [];
+            return allDocs.filter(doc => doc.userId === userId);
         } catch (error) {
             console.error('Error getting documents:', error);
             throw error;
@@ -146,14 +64,14 @@ class DatabaseService {
     }
 
     public async deleteDocument(id: string): Promise<void> {
-        if (!this.database) {
-            throw new Error('Database not initialized');
-        }
-
-        const query = 'DELETE FROM documents WHERE id = ?';
-
         try {
-            await this.database.executeSql(query, [id]);
+            const docs = await AsyncStorage.getItem(this.DOCUMENTS_KEY);
+            const allDocs: Document[] = docs ? JSON.parse(docs) : [];
+            const filteredDocs = allDocs.filter(doc => doc.id !== id);
+            await AsyncStorage.setItem(this.DOCUMENTS_KEY, JSON.stringify(filteredDocs));
+
+            // İlişkili etiketleri de sil
+            await this.deleteDocumentTags(id);
         } catch (error) {
             console.error('Error deleting document:', error);
             throw error;
@@ -161,14 +79,13 @@ class DatabaseService {
     }
 
     public async updateDocumentOCR(id: string, ocrText: string): Promise<void> {
-        if (!this.database) {
-            throw new Error('Database not initialized');
-        }
-
-        const query = 'UPDATE documents SET ocrText = ?, ocrCompleted = 1 WHERE id = ?';
-
         try {
-            await this.database.executeSql(query, [ocrText, id]);
+            const docs = await AsyncStorage.getItem(this.DOCUMENTS_KEY);
+            const allDocs: Document[] = docs ? JSON.parse(docs) : [];
+            const updatedDocs = allDocs.map(doc => 
+                doc.id === id ? { ...doc, ocrText, ocrCompleted: true } : doc
+            );
+            await AsyncStorage.setItem(this.DOCUMENTS_KEY, JSON.stringify(updatedDocs));
         } catch (error) {
             console.error('Error updating document OCR:', error);
             throw error;
@@ -176,19 +93,11 @@ class DatabaseService {
     }
 
     public async createTag(tag: Tag): Promise<void> {
-        if (!this.database) {
-            throw new Error('Database not initialized');
-        }
-
-        const query = 'INSERT INTO tags (id, name, createdAt, userId) VALUES (?, ?, ?, ?)';
-
         try {
-            await this.database.executeSql(query, [
-                tag.id,
-                tag.name,
-                tag.createdAt,
-                tag.userId
-            ]);
+            const tags = await AsyncStorage.getItem(this.TAGS_KEY);
+            const allTags: Tag[] = tags ? JSON.parse(tags) : [];
+            allTags.push(tag);
+            await AsyncStorage.setItem(this.TAGS_KEY, JSON.stringify(allTags));
         } catch (error) {
             console.error('Error creating tag:', error);
             throw error;
@@ -196,14 +105,11 @@ class DatabaseService {
     }
 
     public async addTagToDocument(documentId: string, tagId: string): Promise<void> {
-        if (!this.database) {
-            throw new Error('Database not initialized');
-        }
-
-        const query = 'INSERT INTO document_tags (documentId, tagId) VALUES (?, ?)';
-
         try {
-            await this.database.executeSql(query, [documentId, tagId]);
+            const docTags = await AsyncStorage.getItem(this.DOC_TAGS_KEY);
+            const allDocTags: {documentId: string, tagId: string}[] = docTags ? JSON.parse(docTags) : [];
+            allDocTags.push({ documentId, tagId });
+            await AsyncStorage.setItem(this.DOC_TAGS_KEY, JSON.stringify(allDocTags));
         } catch (error) {
             console.error('Error adding tag to document:', error);
             throw error;
@@ -211,31 +117,35 @@ class DatabaseService {
     }
 
     public async shareDocument(share: Share): Promise<void> {
-        if (!this.database) {
-            throw new Error('Database not initialized');
-        }
-
-        const query = `INSERT INTO shares 
-            (id, documentId, sharedByUserId, sharedWithUserId, sharedAt, accessType, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`;
-
         try {
-            await this.database.executeSql(query, [
-                share.id,
-                share.documentId,
-                share.sharedByUserId,
-                share.sharedWithUserId,
-                share.sharedAt,
-                share.accessType,
-                share.status
-            ]);
+            const shares = await AsyncStorage.getItem(this.SHARES_KEY);
+            const allShares: Share[] = shares ? JSON.parse(shares) : [];
+            allShares.push(share);
+            await AsyncStorage.setItem(this.SHARES_KEY, JSON.stringify(allShares));
 
-            await this.database.executeSql(
-                'UPDATE documents SET shareCount = shareCount + 1 WHERE id = ?',
-                [share.documentId]
+            // Döküman paylaşım sayısını güncelle
+            const docs = await AsyncStorage.getItem(this.DOCUMENTS_KEY);
+            const allDocs: Document[] = docs ? JSON.parse(docs) : [];
+            const updatedDocs = allDocs.map(doc => 
+                doc.id === share.documentId 
+                    ? { ...doc, shareCount: (doc.shareCount || 0) + 1 } 
+                    : doc
             );
+            await AsyncStorage.setItem(this.DOCUMENTS_KEY, JSON.stringify(updatedDocs));
         } catch (error) {
             console.error('Error sharing document:', error);
+            throw error;
+        }
+    }
+
+    private async deleteDocumentTags(documentId: string): Promise<void> {
+        try {
+            const docTags = await AsyncStorage.getItem(this.DOC_TAGS_KEY);
+            const allDocTags: {documentId: string, tagId: string}[] = docTags ? JSON.parse(docTags) : [];
+            const filteredDocTags = allDocTags.filter(dt => dt.documentId !== documentId);
+            await AsyncStorage.setItem(this.DOC_TAGS_KEY, JSON.stringify(filteredDocTags));
+        } catch (error) {
+            console.error('Error deleting document tags:', error);
             throw error;
         }
     }
