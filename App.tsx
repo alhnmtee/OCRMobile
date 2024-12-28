@@ -1,5 +1,4 @@
 // App.tsx
-
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -8,14 +7,25 @@ import {DocumentProvider} from './src/contexts/DocumentContext';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import CameraScreen from './src/screens/CameraScreen';
-import DocumentsScreen from './src/screens/DocumentScreen';
+import DocumentsScreen from './src/screens/DocumentsScreen';
+import DocumentTagsScreen from './src/screens/DocumentTagsScreen';
+import {useInitDatabase} from './src/database/initDatabase';
 
 import {ActivityIndicator, View} from 'react-native';
 
-const Stack = createNativeStackNavigator();
+export type RootStackParamList = {
+  Login: undefined;
+  Home: undefined;
+  Camera: undefined;
+  Documents: undefined;
+  DocumentTags: { documentId: string; documentName: string };
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function Navigation() {
   const {signedIn, loading} = useAuth();
+  useInitDatabase();
 
   if (loading) {
     return (
@@ -54,6 +64,14 @@ function Navigation() {
             options={{
               headerShown: true,
               title: 'Belgelerim',
+            }}
+          />
+          <Stack.Screen
+            name="DocumentTags"
+            component={DocumentTagsScreen}
+            options={{
+              headerShown: true,
+              title: 'Etiketler',
             }}
           />
         </>
