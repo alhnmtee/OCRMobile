@@ -12,6 +12,7 @@ import DocumentTagsScreen from './src/screens/DocumentTagsScreen';
 import BluetoothShareScreen from './src/screens/BluetoothShareScreen';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { DocumentProvider } from './src/contexts/DocumentContext';
+import DocumentViewerScreen from './src/screens/DocumentViewerScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -55,6 +56,12 @@ const App = () => {
               component={BluetoothShareScreen}
               options={{ title: 'Bluetooth ile Paylaş' }} 
             />
+            <Stack.Screen
+              name="DocumentViewer"
+              component={DocumentViewerScreen}
+              options={{ title: 'Belge Görüntüleyici' }}
+            />
+            
           </Stack.Navigator>
         </DocumentProvider>
       </AuthProvider>

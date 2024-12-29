@@ -77,6 +77,11 @@ const DocumentsScreen = ({ navigation }: any) => {
       <View style={styles.actionButtons}>
         <TouchableOpacity
           style={[styles.actionButton, styles.tagButton]}
+          onPress={() => navigation.navigate('DocumentViewer', { document: item })}>
+          <Text style={styles.buttonText}>Görüntüle</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.tagButton]}
           onPress={() => handleAddTags(item)}>
           <Text style={styles.buttonText}>Etiketler</Text>
         </TouchableOpacity>
