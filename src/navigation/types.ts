@@ -13,4 +13,7 @@ export type RootStackParamList = {
   BluetoothShare: {
     document: Document;
   };
+  DocumentViewer: {
+     document: Document 
+  };
 };
