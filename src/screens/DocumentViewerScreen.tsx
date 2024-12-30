@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,13 @@ import {
   Linking,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
+import { CloudService } from '../services/CloudService';  
 
 const DocumentViewerScreen = ({ route }: any) => {
   const { document } = route.params;
   const [selectedText, setSelectedText] = useState<string>('');
+  const [explanation, setExplanation] = useState<string>('');  // State to hold the explanation
+  const [loadingExplanation, setLoadingExplanation] = useState<boolean>(false);  // State to handle loading state for explanation
 
   const handleTextLongPress = (text: string) => {
     if (Platform.OS === 'ios') {
@@ -61,6 +64,24 @@ const DocumentViewerScreen = ({ route }: any) => {
     Linking.openURL(searchUrl);
   };
 
+  const fetchExplanation = async (ocrText: string) => {
+    setLoadingExplanation(true);
+    try {
+      const explanation = await CloudService.getExplanationFromOCR(ocrText);
+      setExplanation(explanation);
+    } catch (error) {
+      setExplanation('Error fetching explanation');
+    } finally {
+      setLoadingExplanation(false);
+    }
+  };
+
+  useEffect(() => {
+    if (document?.ocrText) {
+      fetchExplanation(document.ocrText);
+    }
+  }, [document?.ocrText]);
+
   if (!document) {
     return (
       <View style={styles.container}>
@@ -82,6 +103,17 @@ const DocumentViewerScreen = ({ route }: any) => {
           </Pressable>
         ) : (
           <ActivityIndicator size="large" color="#000" />
+        )}
+
+        {loadingExplanation ? (
+          <ActivityIndicator size="large" color="#000" style={styles.loader} />
+        ) : (
+          explanation && (
+            <View style={styles.explanationContainer}>
+              <Text style={styles.explanationTitle}>Explanation:</Text>
+              <Text style={styles.explanationText}>{explanation}</Text>
+            </View>
+          )
         )}
       </ScrollView>
     </View>
@@ -115,6 +147,26 @@ const styles = StyleSheet.create({
   ocrText: {
     fontSize: 16,
     color: '#333',
+  },
+  loader: {
+    marginTop: 20,
+  },
+  explanationContainer: {
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  explanationTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  explanationText: {
+    fontSize: 16,
+    color: '#555',
   },
   errorText: {
     fontSize: 16,
