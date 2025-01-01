@@ -1,52 +1,123 @@
-# OCR Mobile Application
+# OCR Mobile
 
-OCR Mobile, mobil cihazın kamerasını kullanarak belgeleri tarayıp OCR teknolojisi ile metne dönüştüren, belgeleri yerel ve bulut depolama sistemlerinde saklayan, kullanıcılar arası paylaşım yapabilen ve bildirim gönderebilen kapsamlı bir mobil uygulamadır.
+OCR Mobile, belgeleri mobil cihaz kamerası ile tarayıp OCR teknolojisi ile metne dönüştüren, belgeleri yerel ve bulut depolama sistemlerinde saklayan, kullanıcılar arası paylaşım yapabilen ve bildirim gönderebilen kapsamlı bir mobil uygulamadır.
 
-## Özellikler
+## 🚀 Proje Özellikleri
 
-### 1. Storage / Basic Data
-- Taranan belgelerin yerel depolamada saklanması
-- Dosya sistemi üzerinde uygulama özelinde depolama
-- AsyncStorage ile kullanıcı tercihlerinin saklanması
+### Storage / Basic Data
+Proje, app-specific ve shared kullanıma yönelik dosya sistemi uygulamaları içerir:
+* StorageService ile dosya sistemi yönetimi
+* AsyncStorage ile temel veri saklama
+* Belge metadatalarının yerel depolanması
+* Kullanıcı tercihlerinin yönetimi
 
-### 2. Local Database (Room / CoreData / Document)
-- SQLite veritabanı kullanımı
-- Belge metadatalarının saklanması
-- İlişkisel tablolar: Documents, Tags, Shares
+### Local Database
+Uygulama, birbiriyle ilişkili tablolar içeren bir veritabanı yapısı kullanır:
+* Document: Belge bilgileri
+* Tag: Belge etiketleri
+* Share: Paylaşım kayıtları
+* DocumentTag: Belge-etiket ilişkileri
 
+### RESTful API
+Kullanıcı yönetimi ve kimlik doğrulama için REST API entegrasyonu:
+* JWT tabanlı kimlik doğrulama
+* Kullanıcı kaydı ve girişi
+* Belge paylaşım servisleri
 
-### 5. Background Process / Task
-- OCR işlemlerinin arka planda yürütülmesi
-- İşlem süresi takibi
-- Performans optimizasyonu
+### UI
+Modern ve kullanıcı dostu arayüz:
+* Belge tarama ekranı
+* Belge listeleme ve yönetim ekranı
+* OCR sonuç görüntüleme
+* Paylaşım arayüzü
 
-### 6. Broadcast Receiver / NSNotificationCenter
-- Push notification altyapısı
-- Belge değişiklik kontrolü
-- Bluetooth bağlantı durumu bildirimleri
+### Background Process
+Arka plan işlemleri yönetimi:
+* OCR işlemlerinin arka planda yürütülmesi
+* Belge senkronizasyonu
+* Bildirim yönetimi
 
-### 7. Sensor (Motion / Location / Environment)
-- Kamera sensörü kullanımı
-- Belge tarama optimizasyonu
+### Broadcast Receiver
+Sistem olaylarını ve uygulama bildirimlerini yönetme:
+* Push notification altyapısı
+* Belge değişiklik kontrolü
+* Bağlantı durumu takibi
 
-### 8. Connectivity (Bluetooth)
-- Bluetooth üzerinden belge paylaşımı
-- Cihaz keşfi ve bağlantı yönetimi
-- Güvenli veri transferi
+### Sensor
+Cihaz sensörlerinin kullanımı:
+* Kamera sensörü entegrasyonu
+* Belge tarama optimizasyonu
 
-### 9. Authorization (OAuth / OpenID / JWT)
-- JWT tabanlı kimlik doğrulama
-- Güvenli oturum yönetimi
+### Connectivity
+Çeşitli bağlantı yöntemleri:
+* Bluetooth ile belge paylaşımı
+* WiFi üzerinden senkronizasyon
+* Cellular Network desteği
 
+### Authorization
+Güvenli kimlik doğrulama sistemi:
+* JWT tabanlı yetkilendirme
+* Kullanıcı oturum yönetimi
+* Güvenli belge paylaşımı
 
-## Kurulum
+### Cloud Service
+Bulut tabanlı hizmetler:
+* Hugging Face AI entegrasyonu
+* OCR metin analizi
+* Belge açıklamaları oluşturma
+
+## 🛠️ Kurulum
 
 ### Gereksinimler
-- Node.js 14 veya üzeri
-- React Native CLI
-- Android Studio / Xcode
-- JDK 11 veya üzeri
+* Node.js (v14 veya üzeri)
+* React Native CLI
+* Android Studio (Android geliştirme için)
+* Xcode (iOS geliştirme için)
+* Firebase hesabı
+* Hugging Face API anahtarı
 
-### Bağımlılıklar
+### Geliştirme Ortamı Kurulumu
+
+1. React Native ortamının kurulumu:
+```bash
+npm install -g react-native-cli
+```
+
+2. Projeyi klonlama:
+```bash
+git clone https://github.com/alhnmtee/OCRMobile
+cd OCRMobile
+```
+
+3. Bağımlılıkların yüklenmesi:
 ```bash
 npm install
+```
+
+4. iOS için pod kurulumu:
+```bash
+cd ios
+pod install
+cd ..
+```
+
+5. Ortam değişkenlerinin ayarlanması:
+   * `.env` dosyası oluşturun
+   * Gerekli API anahtarlarını ekleyin
+
+### Android Kurulumu
+1. Android Studio'yu açın
+2. SDK Manager'dan gerekli SDK'ları yükleyin
+3. Bir Android Emulator oluşturun
+4. Projeyi çalıştırın:
+```bash
+npm run android
+```
+
+### iOS Kurulumu
+1. Xcode'u açın
+2. iOS Simulator'ü başlatın
+3. Projeyi çalıştırın:
+```bash
+npm run ios
+```
