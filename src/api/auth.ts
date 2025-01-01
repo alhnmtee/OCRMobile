@@ -1,5 +1,8 @@
+// src/api/auth.ts
+
 import auth from '@react-native-firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ApiService from '../services/ApiService';
 
 interface LoginResponse {
   token: string;
@@ -11,8 +14,16 @@ interface LoginResponse {
 
 export const login = async (email: string, password: string): Promise<LoginResponse> => {
   try {
+    // Firebase Authentication
     const userCredential = await auth().signInWithEmailAndPassword(email, password);
     const token = await userCredential.user.getIdToken();
+    
+    // Backend API Authentication - hata olsa bile devam et
+    try {
+      await ApiService.loginUser(email, password);
+    } catch (apiError) {
+      console.error('API login failed, continuing with Firebase auth:', apiError);
+    }
     
     // Token'ı AsyncStorage'a kaydet
     await AsyncStorage.setItem('userToken', token);
@@ -32,8 +43,16 @@ export const login = async (email: string, password: string): Promise<LoginRespo
 
 export const register = async (email: string, password: string): Promise<LoginResponse> => {
   try {
+    // Firebase Authentication
     const userCredential = await auth().createUserWithEmailAndPassword(email, password);
     const token = await userCredential.user.getIdToken();
+    
+    // Backend API Registration - hata olsa bile devam et
+    try {
+      await ApiService.registerUser(email, password);
+    } catch (apiError) {
+      console.error('API registration failed, continuing with Firebase auth:', apiError);
+    }
     
     await AsyncStorage.setItem('userToken', token);
     
